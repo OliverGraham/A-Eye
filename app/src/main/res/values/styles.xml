@@ -1,0 +1,21 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+
+        <item name="android:textViewStyle">@style/textViewCasualFont</item>
+        <item name="android:textColor">@color/colorFont</item>
+    </style>
+
+    <style name="textViewCasualFont" parent="android:Widget.TextView">
+        <item name="android:fontFamily">casual</item>
+    </style>
+
+    <style name="colorFont">
+        <item name="android:color">#000000</item>
+    </style>
+
+</resources>
