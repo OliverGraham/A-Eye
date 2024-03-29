@@ -6,33 +6,36 @@ package com.projects.oliver_graham.a_eye
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentValues
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.AssetFileDescriptor
 import android.media.MediaPlayer
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.view.WindowManager
 import android.widget.Toast
-import androidx.annotation.RequiresApi
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.*
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
-import kotlinx.android.synthetic.main.activity_main.*
+import com.projects.oliver_graham.a_eye.databinding.ActivityMainBinding
 import java.io.File
 import java.math.RoundingMode
 import java.nio.ByteBuffer
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -48,10 +51,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var outputDirectory: File
     private lateinit var cameraExecutor: ExecutorService
 
-    @RequiresApi(Build.VERSION_CODES.M)
+    private var _binding: ActivityMainBinding? = null
+    private val binding get() = _binding!!
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        _binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(_binding!!.root)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         // Request camera permissions
@@ -63,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Setup listener for take photo button
-        camera_capture_button.setOnClickListener{
+        binding.cameraCaptureButton.setOnClickListener{
             takePhoto()
             playSound()
         }
@@ -72,9 +79,15 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        _binding = null
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults:
         IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 startCamera()
@@ -92,7 +105,7 @@ class MainActivity : AppCompatActivity() {
             baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun getOutputDirectory(): File {
+    private fun getOutputDirectory(): File {
         val mediaDir = externalMediaDirs.firstOrNull()?.let {
             File(it, resources.getString(R.string.app_name)).apply { mkdirs() } }
         return if (mediaDir != null && mediaDir.exists())
@@ -127,11 +140,11 @@ class MainActivity : AppCompatActivity() {
                         val confidence = label.confidence
 
                         if (confidence > .7) {
-                            text_view_analysis_result.text = label.text
-                            text_view_confidence_result.text = "${(confidence * 100).toInt()}%"
+                            binding.textViewAnalysis.text = label.text
+                            binding.textViewConfidenceResult.text = "${(confidence * 100).toInt()}%"
                         }
 
-                        text_view_luminosity_result.text = decFormat.format(luma)
+                        binding.textViewLuminosityResult.text = decFormat.format(luma)
                     })
                 }
 
@@ -147,7 +160,7 @@ class MainActivity : AppCompatActivity() {
                 camera = cameraProvider.bindToLifecycle(
                     this, cameraSelector, preview, imageCapture, imageAnalyzer)
 
-                preview?.setSurfaceProvider(view_finder.createSurfaceProvider())
+                preview?.setSurfaceProvider(binding.viewFinder.surfaceProvider)
 
             } catch(exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
@@ -210,7 +223,7 @@ class MainActivity : AppCompatActivity() {
             return data // Return the byte array
         }
 
-        @SuppressLint("UnsafeExperimentalUsageError")
+        @OptIn(ExperimentalGetImage::class)
         override fun analyze(imageProxy: ImageProxy) {
             val currentTimestamp = System.currentTimeMillis()
 
