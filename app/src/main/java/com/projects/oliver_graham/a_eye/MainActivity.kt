@@ -1,4 +1,4 @@
-// Author: Oliver Graham
+// Author: Oliver Graham, and those from Google's MLKit Codelab
 // Email:  olivergraham916@gmail.com
 
 package com.projects.oliver_graham.a_eye
@@ -69,10 +69,9 @@ class MainActivity : AppCompatActivity() {
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
-        // Setup listener for take photo button
         binding.cameraCaptureButton.setOnClickListener{
             takePhoto()
-            playSound()
+            // playSound()
         }
 
         outputDirectory = getOutputDirectory()
